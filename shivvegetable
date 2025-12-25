@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shiv Vegetables - Fresh Farm Produce</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+  <script>
+    let cart = [];
+    
+    function updateCartCount() {
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      document.getElementById('cartCount').textContent = totalItems;
+    }
+    
+    function addToCart(productId, productName, productPrice, productUnit) {
+      const existingItem = cart.find(item => item.id === productId);
+      
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        cart.push({
+          id: productId,
+          name: productName,
+          price: productPrice,
+          unit: productUnit,
+          quantity: 1
+        });
+      }
+      
+      updateCartCount();
+      showNotification(productName + ' added to cart!');
+    }
+    
+    function showNotification(message) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.classList.remove('hidden');
+      
+      setTimeout(() => {
+        notification.classList.add('hidden');
+      }, 2000);
+    }
+    
+    function showCartPage() {
+      document.getElementById('homePage').classList.add('hidden');
+      document.getElementById('cartPage').classList.remove('hidden');
+      document.getElementById('checkoutPage').classList.add('hidden');
+      renderCart();
+    }
+    
+    function showHomePage() {
+      document.getElementById('cartPage').classList.add('hidden');
+      document.getElementById('homePage').classList.remove('hidden');
+      document.getElementById('checkoutPage').classList.add('hidden');
+    }
+    
+    function showCheckout() {
+      document.getElementById('cartPage').classList.add('hidden');
+      document.getElementById('homePage').classList.add('hidden');
+      document.getElementById('checkoutPage').classList.remove('hidden');
+      renderCheckout();
+    }
+    
+    function renderCart() {
+      const cartItemsContainer = document.getElementById('cartItems');
+      const cartTotal = document.getElementById('cartTotal');
+      const emptyCart = document.getElementById('emptyCart');
+      const cartContent = document.getElementById('cartContent');
+      
+      if (cart.length === 0) {
+        emptyCart.classList.remove('hidden');
+        cartContent.classList.add('hidden');
+        return;
+      }
+      
+      emptyCart.classList.add('hidden');
+      cartContent.classList.remove('hidden');
+      
+      const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      cartTotal.textContent = '₹' + total;
+      
+      cartItemsContainer.innerHTML = cart.map((item, index) => `
+        <div class="bg-white rounded-lg shadow-md p-4 flex justify-between items-center">
+          <div>
+            <h4 class="font-semibold text-gray-900">${item.name}</h4>
+            <p class="text-sm text-gray-600">₹${item.price}/${item.unit}</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <button onclick="updateQuantity(${index}, -1)" class="bg-gray-200 text-gray-700 w-8 h-8 rounded font-bold">-</button>
+              <span class="font-semibold w-8 text-center">${item.quantity}</span>
+              <button onclick="updateQuantity(${index}, 1)" class="bg-green-500 text-white w-8 h-8 rounded font-bold">+</button>
+            </div>
+            <div class="text-right min-w-20">
+              <p class="font-bold text-gray-900">₹${item.price * item.quantity}</p>
+            </div>
+            <button onclick="removeItem(${index})" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Remove</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function renderCheckout() {
+      const checkoutItemsContainer = document.getElementById('checkoutItems');
+      const checkoutTotal = document.getElementById('checkoutTotal');
+      
+      const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      checkoutTotal.textContent = '₹' + total;
+      
+      checkoutItemsContainer.innerHTML = cart.map(item => `
+        <div class="flex justify-between items-center py-2">
+          <div>
+            <span class="font-semibold">${item.name}</span>
+            <span class="text-gray-600 text-sm ml-2">x${item.quantity}</span>
+          </div>
+          <span class="font-semibold">₹${item.price * item.quantity}</span>
+        </div>
+      `).join('');
+    }
+    
+    function updateQuantity(index, change) {
+      cart[index].quantity += change;
+      
+      if (cart[index].quantity <= 0) {
+        cart.splice(index, 1);
+      }
+      
+      updateCartCount();
+      renderCart();
+    }
+    
+    function removeItem(index) {
+      cart.splice(index, 1);
+      updateCartCount();
+      renderCart();
+    }
+    
+    // Send order to WhatsApp handler
+    document.addEventListener('DOMContentLoaded', function() {
+      const sendWhatsAppButton = document.getElementById('sendWhatsAppButton');
+      
+      sendWhatsAppButton.addEventListener('click', function() {
+        const buyerName = document.getElementById('buyerName').value.trim();
+        
+        if (!buyerName) {
+          showNotification('Please enter your name');
+          return;
+        }
+        
+        if (cart.length > 0) {
+          const phoneNumber = '919979691814';
+          const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          
+          let orderDetails = `Hi Shiv Vegetables!\n\nName: ${buyerName}\n\nI would like to place an order:\n\n`;
+          cart.forEach(item => {
+            orderDetails += `${item.name} - ${item.quantity} ${item.unit} (₹${item.price * item.quantity})\n`;
+          });
+          orderDetails += `\nTotal: ₹${total}`;
+          
+          const message = encodeURIComponent(orderDetails);
+          const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+          
+          window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+          
+          showNotification('Opening WhatsApp with your order details!');
+        }
+      });
+    });
+  </script>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="bg-gray-50"><!-- Notification -->
+  <div id="notification" class="hidden fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50"></div>
+  <div class="w-full min-h-screen"><!-- Home Page -->
+   <div id="homePage"><!-- Header -->
+    <header class="w-full bg-white shadow-md">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex justify-between items-center">
+       <div>
+        <h1 class="text-3xl font-bold text-gray-900">Shiv Vegetables</h1>
+        <p class="text-sm text-gray-600 mt-1">Fresh from Farm to Your Table</p>
+       </div>
+       <div class="flex gap-4"><button class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold"> My Orders </button> <button onclick="showCartPage()" class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold"> 🛒 Cart (<span id="cartCount">0</span>) </button>
+       </div>
+      </div>
+     </div>
+    </header><!-- Hero Section -->
+    <section class="w-full py-16 bg-gradient-to-r from-green-50 to-emerald-50">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="text-6xl mb-4">
+       🌾
+      </div>
+      <h2 class="text-4xl font-bold text-gray-900 mb-4">Fresh Organic Produce</h2>
+      <p class="text-lg text-gray-700 max-w-2xl mx-auto">Farm-fresh fruits and vegetables delivered to your doorstep</p>
+     </div>
+    </section><!-- Products Section -->
+    <section class="w-full py-16">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h3 class="text-3xl font-bold text-gray-900 mb-8">Our Products</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"><!-- Product 1 -->
+       <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="w-full h-48 flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 text-8xl">
+         🍅
+        </div>
+        <div class="p-6">
+         <h4 class="text-xl font-semibold text-gray-900 mb-2">Fresh Tomatoes</h4>
+         <p class="text-2xl font-bold text-green-600 mb-4">₹40/kg</p><button onclick="addToCart(1, 'Fresh Tomatoes', 40, 'kg')" class="w-full bg-green-500 text-white py-3 rounded-lg font-semibold"> Add to Cart </button>
+        </div>
+       </div>
+      </div>
+     </div>
+    </section><!-- About Section -->
+    <section class="w-full py-16 bg-white">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mx-auto text-center">
+       <h3 class="text-3xl font-bold text-gray-900 mb-4">About Our Farm</h3>
+       <p class="text-lg text-gray-700 leading-relaxed">We bring you the freshest organic produce directly from our farm. Quality and freshness guaranteed with every order.</p>
+      </div>
+     </div>
+    </section><!-- Contact Section -->
+    <section class="w-full py-16 bg-gray-50">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mx-auto text-center">
+       <h3 class="text-3xl font-bold text-gray-900 mb-6">Contact Us</h3>
+       <div class="flex flex-col sm:flex-row gap-6 justify-center items-center mb-6">
+        <p class="text-base text-gray-700">📞 +91 9979691814</p>
+        <p class="text-base text-gray-700">📞 +91 9978779994</p>
+       </div>
+       <div class="mt-6"><a href="https://maps.app.goo.gl/57HJqkDhHdebMCMq8" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition"> 📍 Visit Our Farm Location </a>
+       </div>
+      </div>
+     </div>
+    </section><!-- Footer -->
+    <footer class="w-full py-8 bg-white border-t border-gray-200">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <p class="text-sm text-gray-600">© 2024 Shiv Vegetables. All rights reserved.</p>
+     </div>
+    </footer>
+   </div><!-- End Home Page --> <!-- Cart Page -->
+   <div id="cartPage" class="hidden">
+    <header class="w-full bg-white shadow-md">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex justify-between items-center">
+       <h1 class="text-3xl font-bold text-gray-900">Shopping Cart</h1><button onclick="showHomePage()" class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold"> ← Back to Shop </button>
+      </div>
+     </div>
+    </header>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><!-- Empty Cart Message -->
+     <div id="emptyCart" class="text-center py-16">
+      <div class="text-6xl mb-4">
+       🛒
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
+      <p class="text-gray-600 mb-6">Add some fresh products to get started!</p><button onclick="showHomePage()" class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold"> Start Shopping </button>
+     </div><!-- Cart Content -->
+     <div id="cartContent" class="hidden">
+      <div class="space-y-4 mb-8" id="cartItems"></div>
+      <div class="bg-white rounded-lg shadow-md p-6">
+       <div class="flex justify-between items-center text-xl font-bold mb-4"><span>Total:</span> <span id="cartTotal" class="text-green-600">₹0</span>
+       </div><button onclick="showCheckout()" class="w-full bg-green-500 text-white py-4 rounded-lg font-bold text-lg"> Proceed to Checkout </button>
+      </div>
+     </div>
+    </div>
+   </div><!-- End Cart Page --> <!-- Checkout Page -->
+   <div id="checkoutPage" class="hidden">
+    <header class="w-full bg-white shadow-md">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex justify-between items-center">
+       <h1 class="text-3xl font-bold text-gray-900">Checkout</h1><button onclick="showCartPage()" class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold"> ← Back to Cart </button>
+      </div>
+     </div>
+    </header>
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><!-- Order Summary -->
+     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">Order Summary</h2>
+      <div id="checkoutItems" class="space-y-2 mb-4"></div>
+      <div class="border-t pt-4">
+       <div class="flex justify-between items-center text-2xl font-bold"><span>Total Amount:</span> <span id="checkoutTotal" class="text-green-600">₹0</span>
+       </div>
+      </div>
+     </div><!-- Customer Details -->
+     <div class="bg-white rounded-lg shadow-md p-8 border-2 border-green-500">
+      <h3 class="text-xl font-semibold text-gray-900 mb-4 text-center">📝 Complete Your Order</h3>
+      <p class="text-sm text-gray-600 mb-6 text-center">Enter your name to send order via WhatsApp</p>
+      <div class="space-y-4">
+       <div><label for="buyerName" class="block text-sm font-semibold text-gray-700 mb-2">Your Name</label> <input type="text" id="buyerName" placeholder="Enter your full name" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-sm focus:border-green-500 focus:outline-none">
+       </div><button id="sendWhatsAppButton" class="w-full bg-green-500 text-white py-4 rounded-lg font-bold text-lg hover:bg-green-600 transition"> 💬 Send Order to WhatsApp </button>
+       <p class="text-xs text-gray-500 text-center">After making the UPI payment, you can share the payment screenshot in WhatsApp chat</p>
+      </div>
+     </div>
+    </div>
+   </div><!-- End Checkout Page -->
+  </div>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b3637d9f3819a95',t:'MTc2NjY0MzQ3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
